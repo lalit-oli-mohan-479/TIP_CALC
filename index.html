@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tip Calculator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c1915;
+      --paper: #f4efe6;
+      --card: #fffdf8;
+      --accent: #c45c26;
+      --muted: #6b6459;
+      --line: #e4dccf;
+      --chip: #efe8dc;
+      --ok: #2f6b4f;
+      --input-bg: #ffffff;
+      --results: #f8f3ea;
+      --error: #9b2c2c;
+      --shadow: rgba(28, 25, 21, 0.08);
+      --glow-a: #f7e8d4;
+      --glow-b: #ead7c4;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #f3eee6;
+      --paper: #161410;
+      --card: #221e19;
+      --accent: #e07a3d;
+      --muted: #b3aa9c;
+      --line: #3a342c;
+      --chip: #2c2721;
+      --ok: #8fcead;
+      --input-bg: #1a1713;
+      --results: #1a1713;
+      --error: #f0a3a3;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --glow-a: #3a2418;
+      --glow-b: #1c2a24;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, var(--glow-a) 0, transparent 40%),
+        radial-gradient(circle at bottom right, var(--glow-b) 0, transparent 45%),
+        var(--paper);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(440px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 18px 40px var(--shadow);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.6rem;
+      letter-spacing: -0.03em;
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    #theme-toggle {
+      flex-shrink: 0;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    #theme-toggle:hover,
+    #theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 1.05rem;
+      background: var(--input-bg);
+      color: var(--ink);
+    }
+
+    input[type="number"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .presets button {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .presets button.active,
+    .presets button:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .results {
+      margin-top: 8px;
+      background: var(--results);
+      border-radius: 14px;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.98rem;
+    }
+
+    .row strong {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .total {
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+      font-size: 1.1rem;
+      color: var(--ok);
+    }
+
+    .error {
+      color: var(--error);
+      font-size: 0.85rem;
+      min-height: 1.2em;
+      margin: 4px 0 0;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="header">
+      <div>
+        <h1>Tip calculator</h1>
+        <p class="lede">Split the bill, pick a tip, and see who owes what.</p>
+      </div>
+      <button type="button" id="theme-toggle" aria-pressed="false">Dark mode</button>
+    </div>
+
+    <form id="tip-form" novalidate>
+      <div class="field">
+        <label for="bill">Bill amount ($)</label>
+        <input id="bill" name="bill" type="number" min="0" step="0.01" placeholder="48.50" />
+      </div>
+
+      <div class="field">
+        <label for="tip">Tip percent</label>
+        <div class="presets" role="group" aria-label="Tip presets">
+          <button type="button" data-tip="10">10%</button>
+          <button type="button" data-tip="15">15%</button>
+          <button type="button" data-tip="18" class="active">18%</button>
+          <button type="button" data-tip="20">20%</button>
+          <button type="button" data-tip="25">25%</button>
+        </div>
+        <input id="tip" name="tip" type="number" min="0" step="0.1" value="18" />
+      </div>
+
+      <div class="field">
+        <label for="people">Split between</label>
+        <input id="people" name="people" type="number" min="1" step="1" value="1" />
+      </div>
+    </form>
+
+    <p class="error" id="error" aria-live="polite"></p>
+
+    <section class="results" aria-live="polite">
+      <div class="row"><span>Tip</span><strong id="tip-amount">$0.00</strong></div>
+      <div class="row"><span>Total</span><strong id="total">$0.00</strong></div>
+      <div class="row total"><span>Each person pays</span><strong id="each">$0.00</strong></div>
+    </section>
+
+    <p class="hint">Amounts update as you type. Tip is rounded to the nearest cent.</p>
+  </main>
+
+  <script>
+    const form = document.getElementById("tip-form");
+    const billInput = document.getElementById("bill");
+    const tipInput = document.getElementById("tip");
+    const peopleInput = document.getElementById("people");
+    const errorEl = document.getElementById("error");
+    const tipAmountEl = document.getElementById("tip-amount");
+    const totalEl = document.getElementById("total");
+    const eachEl = document.getElementById("each");
+    const presetButtons = document.querySelectorAll(".presets button");
+    const themeToggle = document.getElementById("theme-toggle");
+
+    function money(value) {
+      return "$" + value.toFixed(2);
+    }
+
+    function syncPreset() {
+      const current = Number(tipInput.value);
+      presetButtons.forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.tip) === current);
+      });
+    }
+
+    function calculate() {
+      const bill = Number(billInput.value);
+      const tipPercent = Number(tipInput.value);
+      const people = Number(peopleInput.value);
+      const errors = [];
+
+      if (billInput.value === "") {
+        errorEl.textContent = "";
+        tipAmountEl.textContent = "$0.00";
+        totalEl.textContent = "$0.00";
+        eachEl.textContent = "$0.00";
+        return;
+      }
+
+      const billOk = Number.isFinite(bill) && bill >= 0;
+      const tipOk = tipInput.value !== "" && Number.isFinite(tipPercent) && tipPercent >= 0;
+      const peopleOk = Number.isInteger(people) && people >= 1;
+
+      if (!billOk) errors.push("Enter a bill amount of 0 or more.");
+      if (!tipOk) errors.push("Enter a tip percent of 0 or more.");
+      if (!peopleOk) errors.push("Split between at least 1 person.");
+      errorEl.textContent = errors.join(" ");
+
+      if (!billOk || !tipOk) return;
+
+      const tipAmount = Math.round(bill * (tipPercent / 100) * 100) / 100;
+      const total = Math.round((bill + tipAmount) * 100) / 100;
+      tipAmountEl.textContent = money(tipAmount);
+      totalEl.textContent = money(total);
+      eachEl.textContent = peopleOk ? money(Math.round((total / people) * 100) / 100) : "—";
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      const isDark = theme === "dark";
+      themeToggle.setAttribute("aria-pressed", String(isDark));
+      themeToggle.textContent = isDark ? "Light mode" : "Dark mode";
+      localStorage.setItem("theme", theme);
+    }
+
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(savedTheme || (prefersDark ? "dark" : "light"));
+
+    themeToggle.addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    presetButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        tipInput.value = button.dataset.tip;
+        syncPreset();
+        calculate();
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      calculate();
+    });
+
+    form.addEventListener("input", () => {
+      syncPreset();
+      calculate();
+    });
+
+    form.addEventListener("change", () => {
+      syncPreset();
+      calculate();
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
